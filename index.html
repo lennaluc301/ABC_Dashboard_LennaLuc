@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ABC Logistics - Command Center</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #eaf2f8;
+}
+
+nav {
+    background-color: #1f3a5f;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    color: white;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: bold;
+}
+
+nav a:hover { text-decoration: underline; }
+
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+input {
+    padding: 8px;
+}
+
+button {
+    padding: 8px 12px;
+    background-color: #1f3a5f;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover { opacity: 0.9; }
+
+.clear-btn { background-color: #c0392b; margin-top: 10px; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+
+th { background-color: #f4f6f7; }
+
+.error { color: red; margin-bottom: 10px; }
+</style>
+</head>
+
+<body>
+
+<nav>
+    <div><strong>ABC Logistics</strong></div>
+    <div>
+        <a href="index.html">Dashboard</a>
+        <a href="about.html">Developer Profile</a>
+    </div>
+</nav>
+
+<div class="container">
+<h1>Inventory Command Center</h1>
+
+<div id="errorMessage" class="error"></div>
+
+<form id="inventoryForm">
+    <input type="text" id="itemName" placeholder="Item Name" required>
+    <input type="number" id="quantity" placeholder="Quantity" min="0" step="1" required>
+    <button type="submit">Add Item</button>
+</form>
+
+<table>
+<thead>
+<tr>
+<th>Item Name</th>
+<th>Quantity</th>
+</tr>
+</thead>
+<tbody id="inventoryTableBody"></tbody>
+</table>
+
+<button class="clear-btn" id="clearAllBtn">Clear All Items</button>
+
+<canvas id="inventoryChart" style="margin-top:30px;"></canvas>
+</div>
+
+<script>
+let inventory = JSON.parse(localStorage.getItem("inventory")) || [];
+
+const form = document.getElementById("inventoryForm");
+const tableBody = document.getElementById("inventoryTableBody");
+const errorMessage = document.getElementById("errorMessage");
+const clearBtn = document.getElementById("clearAllBtn");
+const ctx = document.getElementById("inventoryChart").getContext("2d");
+
+// Create Chart
+let chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Item Quantity',
+            data: [],
+            backgroundColor: []
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: { beginAtZero: true }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return "Quantity: " + context.raw;
+                    },
+                    afterLabel: function(context) {
+                        if (context.raw < 10) {
+                            return "⚠ LOW STOCK";
+                        }
+                        return "";
+                    }
+                }
+            }
+        }
+    }
+});
+
+function saveInventory() {
+    localStorage.setItem("inventory", JSON.stringify(inventory));
+}
+
+function renderTable() {
+    tableBody.innerHTML = "";
+    inventory.forEach(item => {
+        tableBody.innerHTML += `
+            <tr>
+                <td>${item.name}</td>
+                <td>${item.quantity}</td>
+            </tr>
+        `;
+    });
+}
+
+function updateChart() {
+    chart.data.labels = inventory.map(i => i.name);
+    chart.data.datasets[0].data = inventory.map(i => i.quantity);
+    chart.data.datasets[0].backgroundColor = inventory.map(i =>
+        i.quantity < 10 ? "red" : "#1f77b4"
+    );
+    chart.update();
+}
+
+function isDuplicate(name) {
+    return inventory.some(i => i.name.toLowerCase() === name.toLowerCase());
+}
+
+form.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let name = document.getElementById("itemName").value.trim();
+    let quantity = parseInt(document.getElementById("quantity").value);
+
+    errorMessage.textContent = "";
+
+    if (!name) {
+        errorMessage.textContent = "Item name cannot be empty.";
+        return;
+    }
+
+    if (isNaN(quantity) || quantity < 0) {
+        errorMessage.textContent = "Quantity must be a positive number.";
+        return;
+    }
+
+    if (isDuplicate(name)) {
+        errorMessage.textContent = "Duplicate item not allowed.";
+        return;
+    }
+
+    inventory.push({ name, quantity });
+    saveInventory();
+    renderTable();
+    updateChart();
+    form.reset();
+});
+
+clearBtn.addEventListener("click", function() {
+    inventory = [];
+    saveInventory();
+    renderTable();
+    updateChart();
+});
+
+renderTable();
+updateChart();
+</script>
+
+</body>
+</html>

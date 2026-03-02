@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Developer Profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #eaf2f8;
+}
+
+nav {
+    background-color: #1f3a5f;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    color: white;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: bold;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 15px;
+}
+
+button {
+    padding: 8px 12px;
+    background-color: #1f3a5f;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+form { display:none; margin-top:20px; }
+
+input, textarea {
+    width:100%;
+    padding:8px;
+    margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+    <div><strong>ABC Logistics</strong></div>
+    <div>
+        <a href="index.html">Dashboard</a>
+        <a href="about.html">Developer Profile</a>
+    </div>
+</nav>
+
+<div class="container">
+<h1>Developer Profile</h1>
+
+<div id="profileDisplay">
+<img id="profilePic" src="" alt="Profile Picture">
+<p><strong>Name:</strong> <span id="nameDisplay"></span></p>
+<p><strong>Phone:</strong> <span id="phoneDisplay"></span></p>
+<p><strong>Email:</strong> <span id="emailDisplay"></span></p>
+<p><strong>Company:</strong> <span id="companyDisplay"></span></p>
+<p><strong>Company Address:</strong> <span id="companyAddressDisplay"></span></p>
+<p><strong>About Me:</strong></p>
+<p id="bioDisplay"></p>
+
+<button onclick="toggleForm()">Edit Details</button>
+</div>
+
+<form id="profileForm">
+<input type="text" id="name" placeholder="Full Name" required>
+<input type="text" id="phone" placeholder="Phone Number" required>
+<input type="email" id="email" placeholder="Email" required>
+<input type="text" id="company" placeholder="Company Name" required>
+<input type="text" id="companyAddress" placeholder="Company Address" required>
+<textarea id="bio" placeholder="About Yourself..." required></textarea>
+<input type="file" id="photo" accept="image/*">
+<button type="submit">Save Profile</button>
+</form>
+</div>
+
+<script>
+function toggleForm(){
+    const form = document.getElementById("profileForm");
+    form.style.display = form.style.display === "none" || form.style.display === "" ? "block" : "none";
+}
+
+function loadProfile(){
+    const profile = JSON.parse(localStorage.getItem("developerProfile"));
+    if(profile){
+        document.getElementById("nameDisplay").textContent = profile.name;
+        document.getElementById("phoneDisplay").textContent = profile.phone;
+        document.getElementById("emailDisplay").textContent = profile.email;
+        document.getElementById("companyDisplay").textContent = profile.company;
+        document.getElementById("companyAddressDisplay").textContent = profile.companyAddress;
+        document.getElementById("bioDisplay").textContent = profile.bio;
+        if(profile.photo){
+            document.getElementById("profilePic").src = profile.photo;
+        }
+    }
+}
+
+document.getElementById("profileForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const reader = new FileReader();
+    const photoFile = document.getElementById("photo").files[0];
+
+    if(photoFile){
+        reader.onload = function(){
+            saveProfile(reader.result);
+        };
+        reader.readAsDataURL(photoFile);
+    } else {
+        saveProfile(null);
+    }
+});
+
+function saveProfile(photoData){
+    const profile = {
+        name: document.getElementById("name").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        company: document.getElementById("company").value.trim(),
+        companyAddress: document.getElementById("companyAddress").value.trim(),
+        bio: document.getElementById("bio").value.trim(),
+        photo: photoData || document.getElementById("profilePic").src
+    };
+
+    localStorage.setItem("developerProfile", JSON.stringify(profile));
+    loadProfile();
+    toggleForm();
+}
+
+loadProfile();
+</script>
+
+</body>
+</html>
